@@ -9,7 +9,7 @@
                     <draggable v-model="contentItems" :options="{group:'content'}">
                         <transition-group>
                             <div :class="item.className"
-                                 v-for="item in contentItems" :key="item.id"
+                                 v-for="(item,index) in contentItems" :key="index"
                                  v-bind:style="{height:item.height+'px',backgroundColor:item.color}">
                             </div>
                         </transition-group>
@@ -124,11 +124,12 @@ export default {
         flex-direction: column;
         background-color: whitesmoke;
         width: auto;
+        max-height: 500px;
+        overflow: auto;
     }
 
     .contentItem {
         width: auto;
-        /*height: 50px;*/
         background-color: lightgreen;
     }
 
@@ -149,7 +150,6 @@ export default {
     .imageComponent {
         width: 60px;
         height: 60px;
-        /*background-color: yellow;*/
     }
 
     .contentItems .imageComponent {
