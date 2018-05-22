@@ -11,6 +11,7 @@
                             <div :class="item.className"
                                  v-for="(item,index) in contentItems" :key="index"
                                  v-bind:style="{height:item.height+'px',backgroundColor:item.color}">
+                                <button v-on:click="remove(item)">删除</button>
                             </div>
                         </transition-group>
                     </draggable>
@@ -40,44 +41,53 @@
 <script>
 import draggable from 'vuedraggable'
 
+const contentItems = [
+    {
+        id: 1,
+        height: 50,
+        className: 'contentItem'
+    },
+    {
+        id: 2,
+        height: 80,
+        className: 'contentItem'
+    },
+    {
+        id: 13,
+        height: 40,
+        className: 'contentItem'
+    }
+]
+
+const imageItems = [
+    {
+        id: 455,
+        height: 120,
+        className: 'imageComponent',
+        color: 'deeppink'
+    },
+    {
+        id: 2455,
+        height: 120,
+        className: 'imageComponent',
+        color: 'yellow'
+    }
+]
+
 export default {
     name: "Editor",
     components: {
         draggable
     },
+    methods: {
+        remove: function (item) {
+            this.contentItems.splice(this.contentItems.indexOf(item), 1)
+        }
+    },
     data: function () {
         return {
-            contentItems: [
-                {
-                    id: 1,
-                    height: 50,
-                    className: 'contentItem'
-                },
-                {
-                    id: 2,
-                    height: 80,
-                    className: 'contentItem'
-                },
-                {
-                    id: 13,
-                    height: 40,
-                    className: 'contentItem'
-                }
-            ],
-            imageItems: [
-                {
-                    id: 455,
-                    height: 120,
-                    className: 'imageComponent',
-                    color: 'deeppink'
-                },
-                {
-                    id: 2455,
-                    height: 120,
-                    className: 'imageComponent',
-                    color: 'yellow'
-                }
-            ]
+            contentItems,
+            imageItems
         }
     }
 }
