@@ -19,7 +19,11 @@
             </div>
         </div>
         <div class="componentsPannel">
-            <div>组件面板</div>
+            <div>
+                <span style="margin-right: 50px">组件面板</span>
+                <button v-on:click="save">保存</button>
+                <button v-on:click="reset">重置</button>
+            </div>
             <div class="imageComponentContainer">
                 <div>图片组件</div>
                 <div class="imageComponentItems">
@@ -80,6 +84,18 @@ export default {
         draggable
     },
     methods: {
+        reset: function () {
+            this.contentItems = contentItems.slice(0)
+        },
+        save: function () {
+            let text = ''
+            this.contentItems.forEach((item) => {
+                let {className, id} = item
+                text += className + ', ' + id + '\n'
+            })
+
+            alert(text)
+        },
         remove: function (item) {
             this.contentItems.splice(this.contentItems.indexOf(item), 1)
         }
