@@ -6,9 +6,11 @@
             <div class="editContentContainer">
                 <div>内容</div>
                 <div class="contentItems">
-                    <div class="contentItem"></div>
-                    <div class="contentItem"></div>
-                    <div class="contentItem"></div>
+                    <div class="contentItem" v-bind:key="item.id"
+                         v-for="item of contentItems"
+                         v-bind:style="{height:item.height+'px'}">
+                        
+                    </div>
                 </div>
             </div>
         </div>
@@ -26,7 +28,25 @@
 
 <script>
 export default {
-    name: "Editor"
+    name: "Editor",
+    data: function () {
+        return {
+            contentItems: [
+                {
+                    id: 1,
+                    height: 50
+                },
+                {
+                    id: 2,
+                    height: 80
+                },
+                {
+                    id: 13,
+                    height: 40
+                }
+            ]
+        }
+    }
 }
 </script>
 
@@ -75,7 +95,7 @@ export default {
 
     .contentItem {
         width: auto;
-        height: 50px;
+        /*height: 50px;*/
         background-color: lightgreen;
     }
 
