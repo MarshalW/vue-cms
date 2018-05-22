@@ -6,11 +6,14 @@
             <div class="editContentContainer">
                 <div>内容</div>
                 <div class="contentItems">
-                    <div class="contentItem" v-bind:key="item.id"
-                         v-for="item of contentItems"
-                         v-bind:style="{height:item.height+'px'}">
-                        
-                    </div>
+                    <draggable v-model="contentItems">
+                        <transition-group>
+                            <div class="contentItem"
+                                 v-for="item in contentItems" :key="item.id"
+                                 v-bind:style="{height:item.height+'px'}">
+                            </div>
+                        </transition-group>
+                    </draggable>
                 </div>
             </div>
         </div>
@@ -27,8 +30,13 @@
 </template>
 
 <script>
+import draggable from 'vuedraggable'
+
 export default {
     name: "Editor",
+    components: {
+        draggable
+    },
     data: function () {
         return {
             contentItems: [
