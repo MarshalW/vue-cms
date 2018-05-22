@@ -6,11 +6,11 @@
             <div class="editContentContainer">
                 <div>内容</div>
                 <div class="contentItems">
-                    <draggable v-model="contentItems">
+                    <draggable v-model="contentItems" :options="{group:'content'}">
                         <transition-group>
-                            <div class="contentItem"
+                            <div :class="item.className"
                                  v-for="item in contentItems" :key="item.id"
-                                 v-bind:style="{height:item.height+'px'}">
+                                 v-bind:style="{height:item.height+'px',backgroundColor:item.color}">
                             </div>
                         </transition-group>
                     </draggable>
@@ -22,7 +22,15 @@
             <div class="imageComponentContainer">
                 <div>图片组件</div>
                 <div class="imageComponentItems">
-                    <div class="imageComponent"></div>
+                    <draggable v-model="imageItems" :options="{group:{name:'content',pull:'clone'}}">
+                        <transition-group>
+                            <div class="imageComponent"
+                                 v-for="item in imageItems" :key="item.id"
+                                 v-bind:style="{backgroundColor:item.color}"
+                            >
+                            </div>
+                        </transition-group>
+                    </draggable>
                 </div>
             </div>
         </div>
@@ -42,15 +50,32 @@ export default {
             contentItems: [
                 {
                     id: 1,
-                    height: 50
+                    height: 50,
+                    className: 'contentItem'
                 },
                 {
                     id: 2,
-                    height: 80
+                    height: 80,
+                    className: 'contentItem'
                 },
                 {
                     id: 13,
-                    height: 40
+                    height: 40,
+                    className: 'contentItem'
+                }
+            ],
+            imageItems: [
+                {
+                    id: 455,
+                    height: 120,
+                    className: 'imageComponent',
+                    color: 'deeppink'
+                },
+                {
+                    id: 2455,
+                    height: 120,
+                    className: 'imageComponent',
+                    color: 'yellow'
                 }
             ]
         }
@@ -124,6 +149,11 @@ export default {
     .imageComponent {
         width: 60px;
         height: 60px;
-        background-color: deeppink;
+        /*background-color: yellow;*/
     }
+
+    .contentItems .imageComponent {
+        width: auto;
+    }
+
 </style>
