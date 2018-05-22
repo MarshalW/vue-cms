@@ -22,7 +22,7 @@
             <div class="imageComponentContainer">
                 <div>图片组件</div>
                 <div class="imageComponentItems">
-                    <draggable v-model="imageItems" :options="{group:{name:'content',pull:'clone'}}">
+                    <draggable v-model="imageItems" :options="{group:{name:'content',pull:'clone',put:false}}">
                         <transition-group>
                             <div class="imageComponent"
                                  v-for="item in imageItems" :key="item.id"
