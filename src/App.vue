@@ -1,17 +1,34 @@
 <template>
     <div id="app">
-        <Editor/>
+        <List v-if="this.currentView==='List'"/>
+        <Editor v-if="this.currentView==='Editor'"/>
     </div>
 </template>
 
 <script>
+import List from './components/List.vue'
 import Editor from './components/Editor.vue'
 
 export default {
     name: 'app',
     components: {
+        List,
         Editor
-    }
+    },
+    mounted: function () {
+        this.$bus.$on('navigate', (viewName) => {
+            this.currentView = viewName
+        })
+    },
+    beforeDestroy: function () {
+        this.$bus.$off('navigate')
+    },
+    data: function () {
+        return {
+            currentView: 'List'
+        }
+    },
+    methods: {}
 }
 </script>
 

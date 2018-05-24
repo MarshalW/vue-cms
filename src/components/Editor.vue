@@ -11,7 +11,7 @@
                             <div :class="item.className"
                                  v-for="(item,index) in contentItems" :key="index"
                                  v-bind:style="{height:item.height+'px',backgroundColor:item.color}">
-                                <button v-on:click="remove(item)">删除</button>
+                                <button v-on:click="removeContentItem(item)">删除</button>
                             </div>
                         </transition-group>
                     </draggable>
@@ -33,6 +33,7 @@
                                  v-for="item in imageItems" :key="item.id"
                                  v-bind:style="{backgroundColor:item.color}"
                             >
+                                <button v-on:click="removeImageComponentItem(item)">删除</button>
                             </div>
                         </transition-group>
                     </draggable>
@@ -83,9 +84,21 @@ export default {
     components: {
         draggable
     },
+    mounted: function () {
+        this.$on('removeContentItem', function (item) {
+            while (true) {
+                if (this.contentItems.indexOf(item) > -1) {
+                    this.contentItems.splice(this.contentItems.indexOf(item), 1)
+                } else {
+                    break
+                }
+            }
+        })
+    },
     methods: {
         reset: function () {
             this.contentItems = contentItems.slice(0)
+            this.imageItems = imageItems.slice(0)
         },
         save: function () {
             let text = ''
@@ -94,16 +107,22 @@ export default {
                 text += className + ', ' + id + '\n'
             })
 
+            this.$bus.$emit('navigate', 'List')
+
             alert(text)
         },
-        remove: function (item) {
+        removeContentItem: function (item) {
             this.contentItems.splice(this.contentItems.indexOf(item), 1)
+        },
+        removeImageComponentItem: function (item) {
+            this.$emit('removeContentItem', item)
+            this.imageItems.splice(this.imageItems.indexOf(item), 1)
         }
     },
     data: function () {
         return {
-            contentItems,
-            imageItems
+            contentItems: contentItems.slice(0),
+            imageItems: imageItems.slice(0)
         }
     }
 }
