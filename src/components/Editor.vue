@@ -86,7 +86,8 @@ export default {
     },
     mounted: function () {
         this.$on('removeContentItem', function (item) {
-            while (true) {
+            let a = true
+            while (a) {
                 if (this.contentItems.indexOf(item) > -1) {
                     this.contentItems.splice(this.contentItems.indexOf(item), 1)
                 } else {
