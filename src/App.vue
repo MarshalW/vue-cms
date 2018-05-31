@@ -1,7 +1,7 @@
 <template>
     <div id="app">
-        <List v-if="this.currentView==='List'"/>
-        <Editor v-if="this.currentView==='Editor'"/>
+        <List v-if="this.current.name==='list'"/>
+        <Editor v-if="this.current.name==='editor'" v-bind:params="this.current.params"/>
     </div>
 </template>
 
@@ -16,8 +16,11 @@ export default {
         Editor
     },
     mounted: function () {
-        this.$bus.$on('navigate', (viewName) => {
-            this.currentView = viewName
+        this.$bus.$on('navigate', (viewName, params) => {
+            this.current = {
+                name: viewName,
+                params
+            }
         })
     },
     beforeDestroy: function () {
@@ -25,7 +28,7 @@ export default {
     },
     data: function () {
         return {
-            currentView: 'List'
+            current: {name: 'list'}
         }
     },
     methods: {}

@@ -1,39 +1,62 @@
 <template>
     <div class="editorContainer">
-        <div class="editPannel">
+        <div v-if="status==='loading'">Loading ..</div>
+        <div v-if="status==='saving'">Saving ..</div>
+        <div v-if="status==='show'" class="editPannel">
             <div>编辑面板</div>
-            <div class="editHeadContainer">标题</div>
+            <div class="editHeadContainer">标题： {{article.title}}</div>
             <div class="editContentContainer">
                 <div>内容</div>
                 <div class="contentItems">
-                    <draggable v-model="contentItems" :options="{group:'content'}">
+                    <draggable v-model="article.contentItems" :options="{group:'content'}">
                         <transition-group>
-                            <div :class="item.className"
-                                 v-for="(item,index) in contentItems" :key="index"
-                                 v-bind:style="{height:item.height+'px',backgroundColor:item.color}">
-                                <button v-on:click="removeContentItem(item)">删除</button>
-                            </div>
+                            <template v-for="(item,index) in article.contentItems">
+                                <!-- 文本条目  -->
+                                <div v-if="item.type=='textComponent'"
+                                     class="contentItem" :key="index">
+                                    <button v-on:click="removeContentItem(item)">删除</button>
+                                    <div contenteditable="true" @input="event=>{item.data.text=event.target.innerText}">
+                                        {{item.data.text}}
+                                    </div>
+                                </div>
+                                <!-- 图片条目 -->
+                                <div v-else-if="item.type=='imageComponent'"
+                                     class="contentItem" :key="index"
+                                     v-bind:style="{backgroundColor:'cornflowerblue',height:item.data.height}"
+                                >
+                                    <button v-on:click="removeContentItem(item)">删除</button>
+                                    <div>{{item.data.imgSrc}}</div>
+                                </div>
+                            </template>
                         </transition-group>
                     </draggable>
                 </div>
             </div>
         </div>
-        <div class="componentsPannel">
+        <div v-if="status==='show'" class="componentsPannel">
             <div>
-                <span style="margin-right: 50px">组件面板</span>
+                <span style="margin-right: 10px">组件面板</span>
                 <button v-on:click="save">保存</button>
                 <button v-on:click="reset">重置</button>
+                <button v-on:click="back" style="margin-left: 5px;">返回</button>
+            </div>
+            <div>文本组件
+                <button v-on:click="addBlankTextItem" style="margin-left: 5px;">增加</button>
             </div>
             <div class="imageComponentContainer">
-                <div>图片组件</div>
+                <div>图片组件
+                    <button @click="addNewImageComponent" style="margin-left: 10px">增加</button>
+                </div>
                 <div class="imageComponentItems">
-                    <draggable v-model="imageItems" :options="{group:{name:'content',pull:'clone',put:false}}">
+                    <draggable v-model="article.components.imageComponents"
+                               :options="{group:{name:'content',pull:'clone',put:false}}">
                         <transition-group>
                             <div class="imageComponent"
-                                 v-for="item in imageItems" :key="item.id"
-                                 v-bind:style="{backgroundColor:item.color}"
+                                 v-for="(item, index) in article.components.imageComponents" :key="index"
+                                 v-bind:style="{backgroundColor:'cornflowerblue'}"
                             >
                                 <button v-on:click="removeImageComponentItem(item)">删除</button>
+                                <div>{{item.data.imgSrc}}</div>
                             </div>
                         </transition-group>
                     </draggable>
@@ -45,88 +68,92 @@
 
 <script>
 import draggable from 'vuedraggable'
+import {Article, read, save, clone} from './editor'
 
-const contentItems = [
-    {
-        id: 1,
-        height: 50,
-        className: 'contentItem'
-    },
-    {
-        id: 2,
-        height: 80,
-        className: 'contentItem'
-    },
-    {
-        id: 13,
-        height: 40,
-        className: 'contentItem'
-    }
-]
 
-const imageItems = [
-    {
-        id: 455,
-        height: 120,
-        className: 'imageComponent',
-        color: 'deeppink'
-    },
-    {
-        id: 2455,
-        height: 120,
-        className: 'imageComponent',
-        color: 'yellow'
-    }
-]
+let imageCount = 0
 
 export default {
     name: "Editor",
+    list: null,
     components: {
         draggable
     },
+    props: ['params'],
+
     mounted: function () {
+        if (this.params && this.params.id) {
+            read(this.params.id).then((article) => {
+                this._article = article
+                this.article = clone(article)
+                this.status = 'show'
+            })
+        } else {
+            this._article = new Article()
+            this.article = new Article()
+            this.status = 'show'
+        }
+
         this.$on('removeContentItem', function (item) {
             let a = true
             while (a) {
-                if (this.contentItems.indexOf(item) > -1) {
-                    this.contentItems.splice(this.contentItems.indexOf(item), 1)
+                if (this.article.contentItems.indexOf(item) > -1) {
+                    this.article.contentItems.splice(this.article.contentItems.indexOf(item), 1)
                 } else {
                     break
                 }
             }
         })
     },
+    beforeDestroy: function () {
+    },
     methods: {
+        addNewImageComponent: function () {
+            imageCount++
+            this.article.components.imageComponents.push({
+                type: 'imageComponent',
+                data: {
+                    imgSrc: `p${imageCount}.png`,
+                    height: '100px'
+                }
+            })
+        },
+        addBlankTextItem: function () {
+            this.article.contentItems.unshift({
+                type: 'textComponent',
+                data: {
+                    text: '-'
+                }
+            })
+        },
+        back: function () {
+            this.$bus.$emit('navigate', 'list')
+        },
         reset: function () {
-            this.contentItems = contentItems.slice(0)
-            this.imageItems = imageItems.slice(0)
+            this.article = clone(this._article)
         },
         save: function () {
-            let text = ''
-            this.contentItems.forEach((item) => {
-                let {className, id} = item
-                text += className + ', ' + id + '\n'
+            this.status = 'saving'
+            save(this.article).then(() => {
+                this.$bus.$emit('navigate', 'list')
             })
-
-            this.$bus.$emit('navigate', 'List')
-
-            alert(text)
         },
         removeContentItem: function (item) {
-            this.contentItems.splice(this.contentItems.indexOf(item), 1)
+            this.article.contentItems.splice(this.article.contentItems.indexOf(item), 1)
         },
         removeImageComponentItem: function (item) {
             this.$emit('removeContentItem', item)
-            this.imageItems.splice(this.imageItems.indexOf(item), 1)
+            this.article.components.imageComponents.splice(this.article.components.imageComponents.indexOf(item), 1)
         }
     },
     data: function () {
         return {
-            contentItems: contentItems.slice(0),
-            imageItems: imageItems.slice(0)
+            status: 'loading',
+            article: {}
         }
     }
 }
+
 </script>
 
 <style scoped>
@@ -188,9 +215,15 @@ export default {
     }
 
     .imageComponentItems {
+        /*display: flex;*/
+        /*flex-direction: row;*/
+        background-color: beige;
+    }
+
+    .imageComponentItems span {
         display: flex;
         flex-direction: row;
-        background-color: beige;
+        flex-flow: wrap;
     }
 
     .imageComponent {
