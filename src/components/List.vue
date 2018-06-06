@@ -2,10 +2,13 @@
     <div>
         <div v-if="list" class="listContainer">
             <div>
-                <button @click="navigate">创建文章</button>
+                <button @click="create">创建文章</button>
+                <button @click="remove" style="margin-left: 10px;">删除文章</button>
             </div>
             <div class="listContent">
-                <div v-for="item in list" @click="editIt(item.id)" class="listItem">
+                <div v-for="item in list" @click="modify(item.id)" class="listItem" v-bind:key="item.id">
+                    <input type="checkbox" name="removeId" value="item.id"
+                           @click.stop="clickCheckBox(item.id)"/>
                     <div>id: {{item.id}}</div>
                     <div>title: {{item.title}}</div>
                 </div>
@@ -16,35 +19,53 @@
 </template>
 
 <script>
-import {read} from './list'
+import Article from './article'
 
 export default {
     name: "List",
     mounted: function () {
-        getResults().then((list) => {
-            this.list = list
+        Article.browse({}).then((page) => {
+            this.list = page.results
+            this.removeIds = new Set()
         })
     },
     methods: {
-        navigate: function () {
+        create: function () {
             this.$bus.$emit('navigate', 'editor')
         },
-        editIt: function (id) {
+        modify: function (id) {
             this.$bus.$emit('navigate', 'editor', {id})
+        },
+        remove: function () {
+            if (this.removeIds.size > 0) {
+                let c = confirm('点击确认按钮执行删除操作')
+                if (c) {
+                    this.list = null
+                    Article.remove(this.removeIds).then(() => {
+                        Article.browse({}).then((page) => {
+                            this.removeIds.clear()
+                            this.list = page.results
+                        })
+                    })
+                }
+            }
+        },
+        clickCheckBox: function (id) {
+            if (this.removeIds.has(id)) {
+                this.removeIds.delete(id)
+            } else {
+                this.removeIds.add(id)
+            }
         }
     },
     data: function () {
         return {
-            list: null
+            list: null,
+            removeIds: new Set()
         }
     }
 }
 
-function getResults () {
-    return new Promise(function (resolve) {
-        setTimeout(resolve, 1000, read())
-    })
-}
 </script>
 
 <style scoped>

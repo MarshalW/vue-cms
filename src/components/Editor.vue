@@ -8,24 +8,27 @@
             <div class="editContentContainer">
                 <div>内容</div>
                 <div class="contentItems">
-                    <draggable v-model="article.contentItems" :options="{group:'content'}">
+                    <draggable v-model="article.contentItems" :options="{group:'content'}"
+                               style="background-color: gainsboro;" class="dragArea">
                         <transition-group>
                             <template v-for="(item,index) in article.contentItems">
                                 <!-- 文本条目  -->
-                                <div v-if="item.type=='textComponent'"
+                                <div v-if="item.type=='text'"
                                      class="contentItem" :key="index">
-                                    <button v-on:click="removeContentItem(item)">删除</button>
-                                    <div contenteditable="true" @input="event=>{item.data.text=event.target.innerText}">
-                                        {{item.data.text}}
+                                    <button v-on:click="removeContentItem(index)">删除</button>
+                                    <div contenteditable="plaintext-only"
+                                         @blur="event=>{item.text=event.target.innerText}">
+                                        <!--@input="event=>{item.data.text=event.target.innerText}"-->
+                                        <p>{{item.text}}</p>
                                     </div>
                                 </div>
                                 <!-- 图片条目 -->
-                                <div v-else-if="item.type=='imageComponent'"
+                                <div v-else-if="item.type=='image'"
                                      class="contentItem" :key="index"
-                                     v-bind:style="{backgroundColor:'cornflowerblue',height:item.data.height}"
+                                     v-bind:style="{backgroundColor:'cornflowerblue',height:item.height}"
                                 >
-                                    <button v-on:click="removeContentItem(item)">删除</button>
-                                    <div>{{item.data.imgSrc}}</div>
+                                    <button v-on:click="removeContentItem(index)">删除</button>
+                                    <div>{{item.src}}</div>
                                 </div>
                             </template>
                         </transition-group>
@@ -48,15 +51,16 @@
                     <button @click="addNewImageComponent" style="margin-left: 10px">增加</button>
                 </div>
                 <div class="imageComponentItems">
-                    <draggable v-model="article.components.imageComponents"
-                               :options="{group:{name:'content',pull:'clone',put:false}}">
+                    <draggable v-model="article.components.image"
+                               :options="{group:{name:'content',pull:'clone',put:false}}"
+                               class="dragArea">
                         <transition-group>
                             <div class="imageComponent"
-                                 v-for="(item, index) in article.components.imageComponents" :key="index"
+                                 v-for="(item, index) in article.components.image" :key="index"
                                  v-bind:style="{backgroundColor:'cornflowerblue'}"
                             >
                                 <button v-on:click="removeImageComponentItem(item)">删除</button>
-                                <div>{{item.data.imgSrc}}</div>
+                                <div>{{item.src}}</div>
                             </div>
                         </transition-group>
                     </draggable>
@@ -67,9 +71,9 @@
 </template>
 
 <script>
+import uuid from 'uuid/v4'
 import draggable from 'vuedraggable'
-import {Article, read, save, clone} from './editor'
-
+import Article from './article'
 
 let imageCount = 0
 
@@ -83,26 +87,21 @@ export default {
 
     mounted: function () {
         if (this.params && this.params.id) {
-            read(this.params.id).then((article) => {
-                this._article = article
-                this.article = clone(article)
+            Article.load(this.params.id).then((article) => {
+                this.article = article
                 this.status = 'show'
             })
         } else {
-            this._article = new Article()
             this.article = new Article()
             this.status = 'show'
         }
 
-        this.$on('removeContentItem', function (item) {
-            let a = true
-            while (a) {
-                if (this.article.contentItems.indexOf(item) > -1) {
-                    this.article.contentItems.splice(this.article.contentItems.indexOf(item), 1)
-                } else {
-                    break
+        this.$on('removeAllComponentItem', function (item) {
+            this.article.contentItems.forEach((i, index) => {
+                if (item === i) {
+                    this.article.contentItems.splice(index, 1)
                 }
-            }
+            })
         })
     },
     beforeDestroy: function () {
@@ -110,40 +109,55 @@ export default {
     methods: {
         addNewImageComponent: function () {
             imageCount++
-            this.article.components.imageComponents.push({
-                type: 'imageComponent',
-                data: {
-                    imgSrc: `p${imageCount}.png`,
-                    height: '100px'
-                }
+            this.article.components.image.push({
+                type: 'image',
+                src: `p${imageCount}.png`,
+                height: '100px'
+
             })
-        },
+        }
+        ,
         addBlankTextItem: function () {
             this.article.contentItems.unshift({
-                type: 'textComponent',
-                data: {
-                    text: '-'
-                }
+                id: uuid(),
+                type: 'text',
+                text: '-'
             })
-        },
+        }
+        ,
         back: function () {
+            if (this.article.isModified()) {
+                let i = confirm('已经修改，点击确认按钮放弃保存？')
+                if (!i) {
+                    return
+                }
+            }
             this.$bus.$emit('navigate', 'list')
-        },
+        }
+        ,
         reset: function () {
-            this.article = clone(this._article)
-        },
+            this.article = this.article.orign
+        }
+        ,
         save: function () {
-            this.status = 'saving'
-            save(this.article).then(() => {
-                this.$bus.$emit('navigate', 'list')
-            })
-        },
-        removeContentItem: function (item) {
-            this.article.contentItems.splice(this.article.contentItems.indexOf(item), 1)
+            if (this.article.isModified()) {
+                this.status = 'saving'
+                Article.save(this.article).then((results) => {
+                    this.status = 'loading'
+                    Article.load(results._id).then((article) => {
+                        this.status = 'show'
+                        this.article = article
+                    })
+                })
+            }
+        }
+        ,
+        removeContentItem: function (index) {
+            this.article.contentItems.splice(index, 1)
         },
         removeImageComponentItem: function (item) {
-            this.$emit('removeContentItem', item)
-            this.article.components.imageComponents.splice(this.article.components.imageComponents.indexOf(item), 1)
+            this.$emit('removeAllComponentItem', item)
+            this.article.components.image.splice(this.article.components.image.indexOf(item), 1)
         }
     },
     data: function () {
@@ -233,6 +247,10 @@ export default {
 
     .contentItems .imageComponent {
         width: auto;
+    }
+
+    .dragArea {
+        min-height: 20px;
     }
 
 </style>
